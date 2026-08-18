@@ -1,0 +1,41 @@
+name: deploy
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  id-token: write        # federate into AWS
+
+env:
+  AWS_REGION: us-east-1
+  AWS_ROLE: arn:aws:iam::790543352839:role/tirith-action-demo-ci
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.11.4
+          # The wrapper copies every command's stdout into $GITHUB_OUTPUT, which a plan of any size
+          # overflows. We only want the binary.
+          terraform_wrapper: false
+
+      - run: terraform init -input=false
+      - run: terraform validate
+      - run: terraform plan -out=tfplan -input=false
+      - run: terraform show -json tfplan > plan.json
+
+      - name: Apply
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: terraform apply -input=false -auto-approve tfplan
