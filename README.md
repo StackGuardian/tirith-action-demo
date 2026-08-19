@@ -4,10 +4,21 @@ A small, real Terraform pipeline — and a demonstration of what it costs to put
 
 `main` is the pipeline on its own: GitHub Actions federates into AWS over OIDC, keeps state in S3,
 plans on every pull request and applies on every push to `main`. It manages an encrypted artifact
-bucket and the KMS key behind it, in `us-east-1`.
+bucket and the KMS key behind it, in `us-east-1`. Nothing here is a fixture — the credentials, the
+backend, the apply and the bill are all real.
 
-There is no Tirith on `main`. The [`tirith` branch](../../pull/1) adds it, and the diff is the point:
-seven lines, no policy files, no new job, no change to how the plan is produced.
+There is no Tirith on `main`. Four stacked pull requests add it, one idea each.
+
+## The walkthrough
+
+Read them in order. Each is based on the one before it, so each diff shows only its own change.
+
+| | | |
+|---|---|---|
+| **1** | [Route the plan through IaC governance](../../pull/1) | Eight lines in the workflow. No policy files, no new job, no change to how the plan is produced — and the check comes back with four engines reporting on infrastructure that was already deployed. |
+| **2** | [Add the analytics bucket](../../pull/2) | An ordinary-looking change that ships with its `Owner` tag left blank. The check goes red and `Apply` is skipped. Nobody had to remember to look. |
+| **3** | [Fill in the owner tag](../../pull/3) | One line. The gate clears. Governance is a step in the workflow, not a wall across it. |
+| **4** | [Publish the state after apply](../../pull/4) | A second call to the same action, this time carrying the terraform state, so the platform holds what is actually deployed and not just what was proposed. |
 
 ## What runs
 
@@ -20,15 +31,25 @@ seven lines, no policy files, no new job, no change to how the plan is produced.
 
 Running cost is about a dollar a month, all of it the KMS key.
 
-## Policies
+## What is being checked
 
 The policies live in the `wicked-hop` StackGuardian organization, not in this repository, and are
-selected server-side by the workflow group. Three engines report into one verdict:
+selected server-side by workflow group. Four engines report into one verdict:
 
 - **Tirith** — every `aws_s3_bucket` must carry an `Owner` tag
 - **OPA / rego** — buckets must be named `demo-*`, nothing outside `us-east-1`
   ([source](https://github.com/StackGuardian/tirith-action-demo-policies))
 - **Infracost** — planned monthly cost must stay at or under 20 USD
+- **Checkov** — the platform's built-in best-practice pack, advisory only
+
+A rule the run cannot evaluate is reported as unevaluated rather than quietly passed. That is why
+the post-apply check in PR 4 warns on the plan and cost rules: it carries state, and those two have
+nothing to say about it.
+
+## Merging
+
+Bottom-up — 1, then 2, 3, 4. Out of order leaves PR 2's blank tag on `main`, which blocks the apply
+until PR 3 lands. Which is, admittedly, the whole point.
 
 Ephemeral — `terraform destroy` and delete the backend bucket and the IAM role once the demo is
 retired.
