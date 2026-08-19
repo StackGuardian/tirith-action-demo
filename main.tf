@@ -81,6 +81,6 @@ resource "aws_s3_bucket" "analytics" {
   tags = {
     Name  = "tirith-action-demo"
     Demo  = "tirith-action-demo"
-    Owner = ""
+    Owner = "data-platform"
   }
 }
