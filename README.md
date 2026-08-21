@@ -42,9 +42,10 @@ selected server-side by workflow group. Four engines report into one verdict:
 - **Infracost** — planned monthly cost must stay at or under 20 USD
 - **Checkov** — the platform's built-in best-practice pack, advisory only
 
-A rule the run cannot evaluate is reported as unevaluated rather than quietly passed. That is why
-the post-apply check in PR 4 warns on the plan and cost rules: it carries state, and those two have
-nothing to say about it.
+A rule the run cannot evaluate is reported as unevaluated rather than quietly passed — the plan and
+cost rules have nothing to say about a state document, and say so instead of reporting a pass they did
+not earn. PR 4's state call is silent for that reason: its verdict was all caveat and no news, so it
+reports through neither the comment nor the check run and leaves both to the gate.
 
 ## Merging
 
