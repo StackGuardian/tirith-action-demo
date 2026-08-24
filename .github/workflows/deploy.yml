@@ -38,11 +38,13 @@ jobs:
       - run: terraform plan -out=tfplan -input=false
       - run: terraform show -json tfplan > plan.json
 
-      # Rules live in .tirith/policies/ and are evaluated here, on the runner. No account, no API
-      # key, nothing leaves the machine -- and plan.json is found by convention, so the step needs
-      # no inputs beyond the one that decides whether a failure blocks the deploy.
+      # The same action, now evaluating the policies our organization enforces rather than files in
+      # this repository. The credentials go on the step rather than in the job's env: block -- at job
+      # scope every step could read them, terraform and third-party actions included.
       - uses: StackGuardian/tirith-iac-governance-action@v2
         with:
+          sg-api-key: ${{ secrets.SG_API_TOKEN }}
+          sg-org: ${{ vars.SG_ORG }}
           fail-on-error: true
 
       - name: Apply
