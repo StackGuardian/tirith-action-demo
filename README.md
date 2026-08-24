@@ -7,18 +7,24 @@ plans on every pull request and applies on every push to `main`. It manages an e
 bucket and the KMS key behind it, in `us-east-1`. Nothing here is a fixture — the credentials, the
 backend, the apply and the bill are all real.
 
-There is no Tirith on `main`. Four stacked pull requests add it, one idea each.
+There is no Tirith on `main`. Five stacked pull requests add it, one idea each.
 
 ## The walkthrough
 
-Read them in order. Each is based on the one before it, so each diff shows only its own change.
+Read them in order — the chapter numbers below, not the PR numbers. Each PR is based on the one
+before it, so every diff shows only its own change.
 
 | | | |
 |---|---|---|
-| **1** | [Route the plan through IaC governance](../../pull/1) | Eight lines in the workflow. No policy files, no new job, no change to how the plan is produced — and the check comes back with four engines reporting on infrastructure that was already deployed. |
-| **2** | [Add the analytics bucket](../../pull/2) | An ordinary-looking change that ships with its `Owner` tag left blank. The check goes red and `Apply` is skipped. Nobody had to remember to look. |
-| **3** | [Fill in the owner tag](../../pull/3) | One line. The gate clears. Governance is a step in the workflow, not a wall across it. |
-| **4** | [Publish the state after apply](../../pull/4) | A second call to the same action, this time carrying the terraform state, so the platform holds what is actually deployed and not just what was proposed. |
+| **1** | [Check the plan against policies in this repo](../../pull/6) | Three rules committed under `.tirith/policies/`, evaluated on the runner. **No StackGuardian account, no API key, no network call** — you can reproduce this one today with nothing but the files in the diff. |
+| **2** | [Take the policies from the organization instead](../../pull/7) | Two lines in, three files out. The rules move to the org, and two engines appear that a runner cannot run: cost, which needs the plan priced, and rego, which needs an OPA engine. |
+| **3** | [Add the analytics bucket](../../pull/8) | An ordinary-looking change that ships with its `Owner` tag left blank. The check goes red and `Apply` is skipped. Nobody had to remember to look. |
+| **4** | [Give the analytics bucket an owner](../../pull/9) | One line. The gate clears. Governance is a step in the workflow, not a wall across it. |
+| **5** | [Publish the terraform state after apply](../../pull/10) | A second call to the same action, this time carrying the state, so the platform holds what is actually deployed and not just what was proposed. |
+
+Chapter 1 is the honest starting point and chapter 2 is the trade. Everything from 3 onwards works the
+same either way — the rule that catches the untagged bucket in chapter 3 was a file in this repo one
+chapter earlier.
 
 ## What runs
 
@@ -33,8 +39,8 @@ Running cost is about a dollar a month, all of it the KMS key.
 
 ## What is being checked
 
-The policies live in the `wicked-hop` StackGuardian organization, not in this repository, and are
-selected server-side by workflow group. Four engines report into one verdict:
+From chapter 2 onwards the policies live in the `wicked-hop` StackGuardian organization, not in this
+repository, and are selected server-side by workflow group. Four engines report into one verdict:
 
 - **Tirith** — every `aws_s3_bucket` must carry an `Owner` tag
 - **OPA / rego** — buckets must be named `demo-*`, nothing outside `us-east-1`
@@ -42,15 +48,20 @@ selected server-side by workflow group. Four engines report into one verdict:
 - **Infracost** — planned monthly cost must stay at or under 20 USD
 - **Checkov** — the platform's built-in best-practice pack, advisory only
 
+Chapter 1 runs three of these four ideas from local files: the owner-tag rule verbatim, and the two
+rego rules re-expressed with native operations. The cost ceiling is the one that cannot come along —
+local mode can evaluate a cost policy, but only if you hand it an `infracost breakdown` document
+yourself, and nothing on a runner produces one.
+
 A rule the run cannot evaluate is reported as unevaluated rather than quietly passed — the plan and
 cost rules have nothing to say about a state document, and say so instead of reporting a pass they did
-not earn. PR 4's state call is silent for that reason: its verdict was all caveat and no news, so it
-reports through neither the comment nor the check run and leaves both to the gate.
+not earn. Chapter 5's state call is silent for that reason: its verdict was all caveat and no news, so
+it reports through neither the comment nor the check run and leaves both to the gate.
 
 ## Merging
 
-Bottom-up — 1, then 2, 3, 4. Out of order leaves PR 2's blank tag on `main`, which blocks the apply
-until PR 3 lands. Which is, admittedly, the whole point.
+Bottom-up — 1, then 2, 3, 4, 5. Out of order leaves chapter 3's blank tag on `main`, which blocks the
+apply until chapter 4 lands. Which is, admittedly, the whole point.
 
 Ephemeral — `terraform destroy` and delete the backend bucket and the IAM role once the demo is
 retired.
