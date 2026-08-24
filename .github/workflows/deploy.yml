@@ -8,6 +8,8 @@ on:
 permissions:
   contents: read
   id-token: write        # federate into AWS
+  pull-requests: write   # the sticky comment
+  checks: write          # the check run
 
 env:
   AWS_REGION: us-east-1
@@ -35,6 +37,13 @@ jobs:
       - run: terraform validate
       - run: terraform plan -out=tfplan -input=false
       - run: terraform show -json tfplan > plan.json
+
+      # Rules live in .tirith/policies/ and are evaluated here, on the runner. No account, no API
+      # key, nothing leaves the machine -- and plan.json is found by convention, so the step needs
+      # no inputs beyond the one that decides whether a failure blocks the deploy.
+      - uses: StackGuardian/tirith-iac-governance-action@v2.1.0
+        with:
+          fail-on-error: true
 
       - name: Apply
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
