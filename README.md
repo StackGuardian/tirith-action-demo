@@ -16,11 +16,11 @@ before it, so every diff shows only its own change.
 
 | | | |
 |---|---|---|
-| **1** | [Check the plan against policies in this repo](../../pull/6) | Three rules committed under `.tirith/policies/`, evaluated on the runner. **No StackGuardian account, no API key, no network call** — you can reproduce this one today with nothing but the files in the diff. |
-| **2** | [Take the policies from the organization instead](../../pull/7) | Two lines in, three files out. The rules move to the org, and two engines appear that a runner cannot run: cost, which needs the plan priced, and rego, which needs an OPA engine. |
-| **3** | [Add the analytics bucket](../../pull/8) | An ordinary-looking change that ships with its `Owner` tag left blank. The check goes red and `Apply` is skipped. Nobody had to remember to look. |
-| **4** | [Give the analytics bucket an owner](../../pull/9) | One line. The gate clears. Governance is a step in the workflow, not a wall across it. |
-| **5** | [Publish the terraform state after apply](../../pull/10) | A second call to the same action, this time carrying the state, so the platform holds what is actually deployed and not just what was proposed. |
+| **1** | [Check the plan against policies in this repo](../../pull/11) | Three rules committed under `.tirith/policies/`, evaluated on the runner. **No StackGuardian account, no API key, no network call** — you can reproduce this one today with nothing but the files in the diff. |
+| **2** | [Take the policies from the organization instead](../../pull/12) | Two lines in, three files out. The rules move to the org, and two engines appear that a runner cannot run: cost, which needs the plan priced, and rego, which needs an OPA engine. |
+| **3** | [Add the analytics bucket](../../pull/13) | An ordinary-looking change that ships with its `Owner` tag left blank. The check goes red and `Apply` is skipped. Nobody had to remember to look. |
+| **4** | [Give the analytics bucket an owner](../../pull/14) | One line. The gate clears. Governance is a step in the workflow, not a wall across it. |
+| **5** | [Publish the terraform state after apply](../../pull/15) | A second call to the same action, this time carrying the state, so the platform holds what is actually deployed and not just what was proposed. |
 
 Chapter 1 is the honest starting point and chapter 2 is the trade. Everything from 3 onwards works the
 same either way — the rule that catches the untagged bucket in chapter 3 was a file in this repo one
@@ -34,6 +34,7 @@ chapter earlier.
 | Credentials | OIDC into `arn:aws:iam::790543352839:role/tirith-action-demo-ci` — no long-lived keys |
 | State | `s3://demo-tirith-action-tfstate-790543352839`, native S3 locking |
 | Managed | `aws_s3_bucket.artifacts`, `aws_kms_key.artifacts` |
+| Action | `StackGuardian/tirith-iac-governance-action@v2.1.0` (py-tirith 1.2.1) |
 
 Running cost is about a dollar a month, all of it the KMS key.
 
@@ -52,6 +53,13 @@ Chapter 1 runs three of these four ideas from local files: the owner-tag rule ve
 rego rules re-expressed with native operations. The cost ceiling is the one that cannot come along —
 local mode can evaluate a cost policy, but only if you hand it an `infracost breakdown` document
 yourself, and nothing on a runner produces one.
+
+Every comment leads with the **planned changes** as a `diff` block — one row per changing resource,
+the attributes that move underneath it, and terraform's summary line — so the thing a rule objected to
+is visible in the change itself and not only in the verdict. Chapter 3 is where that pays off: the
+empty `Owner` sits in the plan directly above the rule that refused it. It is rendered from the masked
+plan on the runner, so a value terraform marked sensitive never reaches the comment, and unchanged
+resources are counted rather than listed.
 
 A rule the run cannot evaluate is reported as unevaluated rather than quietly passed — the plan and
 cost rules have nothing to say about a state document, and say so instead of reporting a pass they did
