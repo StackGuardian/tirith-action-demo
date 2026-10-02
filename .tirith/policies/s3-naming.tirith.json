@@ -1,0 +1,25 @@
+{
+  "meta": {
+    "version": "v1",
+    "id": "s3-naming",
+    "name": "S3 buckets are named as demo infrastructure",
+    "description": "Every aws_s3_bucket name must start with demo- so throwaway infrastructure is identifiable",
+    "required_provider": "stackguardian/terraform_plan"
+  },
+  "eval_expression": "bucket_name",
+  "evaluators": [
+    {
+      "id": "bucket_name",
+      "description": "Name of every planned S3 bucket",
+      "provider_args": {
+        "operation_type": "attribute",
+        "terraform_resource_type": "aws_s3_bucket",
+        "terraform_resource_attribute": "bucket"
+      },
+      "condition": {
+        "type": "RegexMatch",
+        "value": "^demo-"
+      }
+    }
+  ]
+}
