@@ -16,11 +16,11 @@ before it, so every diff shows only its own change.
 
 | | | |
 |---|---|---|
-| **1** | [Check the plan against policies in this repo](../../pull/21) | Three rules committed under `.tirith/policies/`, evaluated on the runner. **No StackGuardian account, no API key, no network call** — you can reproduce this one today with nothing but the files in the diff. |
-| **2** | [Take the policies from the organization instead](../../pull/22) | Two lines in, three files out. The rules move to the org, and two engines appear that a runner cannot run: cost, which needs the plan priced, and rego, which needs an OPA engine. |
-| **3** | [Add the analytics bucket](../../pull/23) | An ordinary-looking change that ships with its `Owner` tag left blank. The check goes red and `Apply` is skipped. Nobody had to remember to look. |
-| **4** | [Give the analytics bucket an owner](../../pull/24) | One line. The gate clears. Governance is a step in the workflow, not a wall across it. |
-| **5** | [Publish the terraform state after apply](../../pull/25) | A second call to the same action, this time carrying the state, so the platform holds what is actually deployed and not just what was proposed. |
+| **1** | [Check the plan against policies in this repo](../../pull/26) | Three rules committed under `.tirith/policies/`, evaluated on the runner. **No StackGuardian account, no API key, no network call** — you can reproduce this one today with nothing but the files in the diff. |
+| **2** | [Take the policies from the organization instead](../../pull/27) | Two lines in, three files out. The rules move to the org, and two engines appear that a runner cannot run: cost, which needs the plan priced, and rego, which needs an OPA engine. |
+| **3** | [Add the analytics bucket](../../pull/28) | An ordinary-looking change that ships with its `Owner` tag left blank. The check goes red and `Apply` is skipped. Nobody had to remember to look. |
+| **4** | [Give the analytics bucket an owner](../../pull/29) | One line. The gate clears. Governance is a step in the workflow, not a wall across it. |
+| **5** | [Publish the terraform state after apply](../../pull/30) | A second call to the same action, this time carrying the state, so the platform holds what is actually deployed and not just what was proposed. |
 
 Chapter 1 is the honest starting point and chapter 2 is the trade. Everything from 3 onwards works the
 same either way — the rule that catches the untagged bucket in chapter 3 was a file in this repo one
