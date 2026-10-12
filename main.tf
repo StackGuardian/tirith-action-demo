@@ -74,3 +74,13 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "artifacts" {
     bucket_key_enabled = true
   }
 }
+
+resource "aws_s3_bucket" "analytics" {
+  bucket = "demo-tirith-action-analytics-790543352839"
+
+  tags = {
+    Name  = "tirith-action-demo"
+    Demo  = "tirith-action-demo"
+    Owner = ""
+  }
+}
