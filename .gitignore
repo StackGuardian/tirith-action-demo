@@ -3,3 +3,4 @@
 *.tfstate.*
 tfplan
 plan.json
+state.json

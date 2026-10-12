@@ -50,3 +50,25 @@ jobs:
       - name: Apply
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: terraform apply -input=false -auto-approve tfplan
+
+      # What is actually deployed, not what was proposed. On a pull request the apply above is
+      # skipped, so this publishes the state as it currently stands; on a push to main it publishes
+      # what was just applied. Masked in the runner before it leaves.
+      - name: Read the current state
+        run: terraform show -json > state.json
+
+      # Publishing state is not a verdict, so this call gets neither reporting surface -- the gate
+      # above owns the comment and the check run. continue-on-error because a publication step must
+      # not be able to fail a deploy.
+      - uses: StackGuardian/tirith-iac-governance-action@v2.1.1
+        continue-on-error: true
+        with:
+          sg-api-key: ${{ secrets.SG_API_TOKEN }}
+          sg-org: ${{ vars.SG_ORG }}
+          input-path: state.json
+          input-kind: terraform_state
+          comment: false
+          check: false
+          # Still needed with both surfaces off: the tag also names the uploaded bundle, and the
+          # default would overwrite the one the gate above just uploaded.
+          comment-tag: post-apply
