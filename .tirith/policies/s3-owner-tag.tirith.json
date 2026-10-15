@@ -1,0 +1,24 @@
+{
+  "meta": {
+    "version": "v1",
+    "id": "s3-owner-tag",
+    "name": "S3 buckets must declare an owner",
+    "description": "Every aws_s3_bucket must carry an Owner tag so it can be attributed",
+    "required_provider": "stackguardian/terraform_plan"
+  },
+  "eval_expression": "owner_tag",
+  "evaluators": [
+    {
+      "id": "owner_tag",
+      "description": "Owner tag on every planned S3 bucket",
+      "provider_args": {
+        "operation_type": "attribute",
+        "terraform_resource_type": "aws_s3_bucket",
+        "terraform_resource_attribute": "tags.Owner"
+      },
+      "condition": {
+        "type": "IsNotEmpty"
+      }
+    }
+  ]
+}
